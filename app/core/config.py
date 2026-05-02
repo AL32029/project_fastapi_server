@@ -2,10 +2,12 @@ import multiprocessing
 import os
 from typing import Optional
 
+import pytz
 from dotenv import load_dotenv
 from pydantic import PostgresDsn
 from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings
+from pytz.tzinfo import DstTzInfo
 
 load_dotenv()
 
@@ -33,6 +35,8 @@ class AppSettings(BaseSettings):
 
     jwt_secret: str = os.getenv('JWT_SECRET')
     encrypt_algorithm: str = 'HS256'
+
+    timezone: DstTzInfo = pytz.timezone('Europe/Minsk')
 
     class Config:
         _env_file = '.env'

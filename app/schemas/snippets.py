@@ -1,10 +1,12 @@
-import uuid
 import datetime
+import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
+
+from core.config import app_settings
 
 
-class CodeSnippetCreateSchema(BaseModel):
+class CodeSnippetCRUDSchema(BaseModel):
     title: str
     code: str
     language: str
@@ -15,3 +17,9 @@ class CodeSnippetInfoSchema(BaseModel):
     code: str
     language: str
     created_at: datetime.datetime
+
+    @model_validator(mode='after')
+    def convert_timezone(self):
+        if self.created_at and self.created_at.tzinfo is not None:
+            self.created_at = self.created_at.astimezone(app_settings.timezone)
+        return self

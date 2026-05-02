@@ -1,5 +1,4 @@
 import datetime
-import hashlib
 from typing import Optional, Annotated, Dict
 
 import bcrypt
@@ -20,13 +19,11 @@ ALGORITHM = app_settings.encrypt_algorithm
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl='/auth/token')
 
 def hash_password(password: str) -> str:
-    password_bytes = hashlib.sha256(password.encode()).digest()
-    return bcrypt.hashpw(password_bytes, bcrypt.gensalt(rounds=14)).decode()
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=14)).decode()
 
 def verify_password(password: str, hashed_password: str) -> bool:
     try:
-        password_bytes = hashlib.sha256(password.encode()).digest()
-        return bcrypt.checkpw(password_bytes, hashed_password.encode())
+        return bcrypt.checkpw(password.encode(), hashed_password.encode())
     except (ValueError, TypeError):
         return False
 
@@ -52,8 +49,6 @@ async def reg_user(user_data: UserRegisterSchema, db: db_dependency):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='User with such credentials already exists'
         )
-    except Exception as ex:
-        raise ex
 
 
 async def auth_user(login_data: UserLoginSchema, db: db_dependency):
@@ -75,7 +70,6 @@ async def get_current_user(token: str = Depends(oauth2_bearer)):
     )
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
-        print(payload)
         user_data = {"sub": payload.get("sub")}
         if user_data is None:
             raise credentials_exception

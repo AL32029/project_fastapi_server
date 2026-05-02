@@ -781,6 +781,18 @@ files = [
 ]
 
 [[package]]
+name = "pytz"
+version = "2026.1.post1"
+description = "World timezone definitions, modern and historical"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "pytz-2026.1.post1-py2.py3-none-any.whl", hash = "sha256:f2fd16142fda348286a75e1a524be810bb05d444e5a081f37f7affc635035f7a"},
+    {file = "pytz-2026.1.post1.tar.gz", hash = "sha256:3378dde6a0c3d26719182142c56e60c7f9af7e968076f31aae569d72a0358ee1"},
+]
+
+[[package]]
 name = "rsa"
 version = "4.2"
 description = "Pure-Python RSA implementation"
@@ -975,4 +987,4 @@ standard = ["colorama (>=0.4) ; sys_platform == \"win32\"", "httptools (>=0.6.3)
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.14"
-content-hash = "222e0495bfea23757b9d9d7ace3aa1f299c0c6102d5e44e4798645d92d0d04dc"
+content-hash = "e654ffce78f19271eaf2c42f32bc486d4a26ac2ab575eb01ea7e32915635974e"

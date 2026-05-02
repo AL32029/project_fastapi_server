@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.exc import IntegrityError
 from starlette import status
 
 from db.db import db_dependency
@@ -15,6 +16,11 @@ auth_router = APIRouter(prefix='/auth', tags=['auth'])
 async def register_user(user_data: UserRegisterSchema, db: db_dependency):
     try:
         return await reg_user(user_data=user_data, db=db)
+    except IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail='The specified email address is already in use'
+        )
     except Exception as ex:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
