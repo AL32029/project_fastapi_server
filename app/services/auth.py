@@ -1,4 +1,5 @@
-from datetime import timedelta, datetime
+import datetime
+import hashlib
 from typing import Optional, Annotated, Dict
 
 import bcrypt
@@ -6,7 +7,6 @@ from asyncpg import UniqueViolationError
 from fastapi import HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
-from passlib.context import CryptContext
 from sqlalchemy import select
 from starlette import status
 
@@ -16,41 +16,33 @@ from models import Users
 from schemas.users import UserRegisterSchema, UserLoginSchema
 
 JWT_SECRET = app_settings.jwt_secret
-ALGORITHM = app_settings.encrypt_algoritm
-bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
+ALGORITHM = app_settings.encrypt_algorithm
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl='/auth/token')
 
-
-def generate_salt() -> str:
-    return bcrypt.gensalt().decode("utf-8")
-
-def hash_password(password: str, salt: str) -> str:
-    return bcrypt.hashpw(
-        password.encode("utf-8"),
-        salt.encode("utf-8")
-    ).decode("utf-8")
+def hash_password(password: str) -> str:
+    password_bytes = hashlib.sha256(password.encode()).digest()
+    return bcrypt.hashpw(password_bytes, bcrypt.gensalt(rounds=14)).decode()
 
 def verify_password(password: str, hashed_password: str) -> bool:
-    return bcrypt.checkpw(
-        password.encode("utf-8"),
-        hashed_password.encode("utf-8")
-    )
+    try:
+        password_bytes = hashlib.sha256(password.encode()).digest()
+        return bcrypt.checkpw(password_bytes, hashed_password.encode())
+    except (ValueError, TypeError):
+        return False
 
 
-def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes=15)) -> str:
+def create_access_token(data: dict, expires_delta: datetime.timedelta = datetime.timedelta(minutes=15)) -> str:
     to_encode = data.copy()
-    expire = int((datetime.utcnow() + expires_delta).timestamp())
+    expire = int((datetime.datetime.now(datetime.UTC) + expires_delta).timestamp())
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, JWT_SECRET, algorithm=ALGORITHM)
 
 
 async def reg_user(user_data: UserRegisterSchema, db: db_dependency):
-    user_salt: str = generate_salt()
     try:
         create_user_statement = Users(
             **user_data.model_dump(exclude={'password'}),
-            salt=user_salt,
-            hashed_password=hash_password(user_data.password, user_salt)
+            hashed_password=hash_password(user_data.password)
         )
         db.add(create_user_statement)
         await db.commit()
@@ -65,8 +57,7 @@ async def reg_user(user_data: UserRegisterSchema, db: db_dependency):
 
 
 async def auth_user(login_data: UserLoginSchema, db: db_dependency):
-    result = await db.execute(select(Users).where(Users.email == login_data.email))
-    user: Optional[Users] = result.scalars().first()
+    user: Optional[Users] = await db.scalar(select(Users).where(Users.email == login_data.email))
 
     if not user:
         return False
@@ -84,6 +75,7 @@ async def get_current_user(token: str = Depends(oauth2_bearer)):
     )
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
+        print(payload)
         user_data = {"sub": payload.get("sub")}
         if user_data is None:
             raise credentials_exception

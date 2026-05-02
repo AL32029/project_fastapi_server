@@ -1,6 +1,8 @@
 __all__ = [
     'Base',
-    'Users'
+    'Users',
+    'Snippets'
 ]
 from .base import Base
+from .snippets import Snippets
 from .users import Users

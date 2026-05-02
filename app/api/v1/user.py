@@ -4,11 +4,12 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette import status
 
-from auth.auth import reg_user, auth_user, create_access_token, user_dependency
 from db.db import db_dependency
 from schemas.users import UserRegisterSchema, UserLoginSchema
+from services.auth import reg_user, auth_user, create_access_token, user_dependency
 
 auth_router = APIRouter(prefix='/auth', tags=['auth'])
+
 
 @auth_router.post('/register')
 async def register_user(user_data: UserRegisterSchema, db: db_dependency):
@@ -19,6 +20,7 @@ async def register_user(user_data: UserRegisterSchema, db: db_dependency):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f'An error has occurred: {ex}'
         )
+
 
 @auth_router.post('/login')
 async def login_for_access_token(login_data: UserLoginSchema, db: db_dependency):
@@ -36,6 +38,7 @@ async def login_for_access_token(login_data: UserLoginSchema, db: db_dependency)
 
     return {'access_token': access_token, 'token_type': 'bearer'}
 
+
 @auth_router.post("/token")
 async def token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
                 db: db_dependency):
@@ -49,6 +52,7 @@ async def token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
         data={"sub": user.email}
     )
     return {'access_token': access_token, 'token_type': 'bearer'}
+
 
 @auth_router.get("/current_user")
 async def get_current_user(user: user_dependency):

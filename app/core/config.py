@@ -31,8 +31,8 @@ class AppSettings(BaseSettings):
         )
     )
 
-    jwt_secret: str = 'snippets_development'
-    encrypt_algoritm: str = 'HS256'
+    jwt_secret: str = os.getenv('JWT_SECRET')
+    encrypt_algorithm: str = 'HS256'
 
     class Config:
         _env_file = '.env'
