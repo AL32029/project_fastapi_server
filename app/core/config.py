@@ -11,6 +11,7 @@ from pytz.tzinfo import DstTzInfo
 
 load_dotenv()
 
+
 class AppSettings(BaseSettings):
     app_port: int = 8000
     app_host: str = 'localhost'
@@ -37,6 +38,56 @@ class AppSettings(BaseSettings):
     encrypt_algorithm: str = 'HS256'
 
     timezone: DstTzInfo = pytz.timezone('Europe/Minsk')
+
+    logging_config: dict = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'filters': {
+
+        },
+        'formatters': {
+            'simple': {
+                'format': '[%(levelname)s] %(message)s',
+                'datefmt': '%Y-%m-%dT%H:%M:%S%z'
+            },
+            'detailed': {
+                'format': '[%(levelname)s|%(module)s|L%(lineno)d] %(asctime)s: %(message)s',
+                'datefmt': '%Y-%m-%dT%H:%M:%S%z'
+            }
+        },
+        'handlers': {
+            "stderr": {
+                "class": "logging.StreamHandler",
+                "level": "WARNING",
+                "formatter": "simple",
+                "stream": "ext://sys.stderr"
+            },
+            "file": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "level": "DEBUG",
+                "formatter": "detailed",
+                "filename": "./logs/server_logs.log",
+                "maxBytes": 10000,
+                "backupCount": 3
+            },
+            "queue_handler": {
+                "class": "logging.handlers.QueueHandler",
+                "handlers": [
+                    "stderr",
+                    "file",
+                ],
+                "respect_handler_level": True
+            }
+        },
+        'loggers': {
+            "root": {
+                "level": "DEBUG",
+                "handlers": [
+                    "queue_handler",
+                ],
+            }
+        }
+    }
 
     class Config:
         _env_file = '.env'

@@ -1,6 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, HTTPException
+from fastapi.requests import Request
 from starlette import status
 
 from db.db import db_dependency
@@ -11,12 +12,13 @@ from services.snippet import create_snippet_item, get_snippet_item_by_uid, edit_
 
 snippet_router = APIRouter(prefix='/snippet', tags=['snippet'])
 
+
 @snippet_router.post('/create', response_model=CodeSnippetInfoSchema, responses={
     201: {'description': 'Snippet was created'},
-})
-async def create_snippet(user: user_dependency, snippet: CodeSnippetCRUDSchema, db: db_dependency):
+}, status_code=status.HTTP_201_CREATED)
+async def create_snippet(request: Request, user: user_dependency, snippet: CodeSnippetCRUDSchema, db: db_dependency) -> CodeSnippetInfoSchema:
     try:
-        return await create_snippet_item(user=user, snipped_data=snippet, db=db)
+        return await create_snippet_item(request=request, user=user, snipped_data=snippet, db=db)
     except Exception as ex:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -28,9 +30,9 @@ async def create_snippet(user: user_dependency, snippet: CodeSnippetCRUDSchema, 
     404: {'description': 'Snippet not found'},
     200: {'description': 'Snippet was founded'},
 })
-async def get_snippet_item(uid: uuid.UUID, db: db_dependency):
+async def get_snippet_item(request: Request, uid: uuid.UUID, db: db_dependency):
     try:
-        return await get_snippet_item_by_uid(uid=uid, db=db)
+        return await get_snippet_item_by_uid(request=request, uid=uid, db=db)
     except HTTPException as ex:
         if ex.status_code == status.HTTP_404_NOT_FOUND:
             raise HTTPException(
@@ -51,9 +53,10 @@ async def get_snippet_item(uid: uuid.UUID, db: db_dependency):
     403: {'description': 'You can\'t change someone else\'s snippet'},
     200: {'description': 'Snippet was successfully edited'},
 })
-async def edit_snippet_item(user: user_dependency, uid: uuid.UUID, snippet: CodeSnippetCRUDSchema, db: db_dependency):
+async def edit_snippet_item(request: Request, user: user_dependency,
+                            uid: uuid.UUID, snippet: CodeSnippetCRUDSchema, db: db_dependency):
     try:
-        return await edit_snippet_item_by_uid(user=user, uid=uid, snippet=snippet, db=db)
+        return await edit_snippet_item_by_uid(request=request, user=user, uid=uid, snippet=snippet, db=db)
     except HTTPException as ex:
         if ex.status_code == status.HTTP_404_NOT_FOUND:
             raise HTTPException(
