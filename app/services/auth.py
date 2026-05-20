@@ -1,4 +1,5 @@
 import datetime
+import logging
 from typing import Optional, Annotated, Dict
 
 import bcrypt
@@ -17,6 +18,8 @@ from schemas.users import UserRegisterSchema, UserLoginSchema
 JWT_SECRET = app_settings.jwt_secret
 ALGORITHM = app_settings.encrypt_algorithm
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl='/auth/token')
+
+logger = logging.getLogger('users')
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=14)).decode()
@@ -43,8 +46,10 @@ async def reg_user(user_data: UserRegisterSchema, db: db_dependency):
         )
         db.add(create_user_statement)
         await db.commit()
+        logger.info(f'The user {user_data.name} has been successfully registered')
         return {"response": "User created successfully"}
     except UniqueViolationError:
+        logger.error(f'User {user_data.name} was not registered: This user already exists')
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='User with such credentials already exists'
@@ -55,11 +60,14 @@ async def auth_user(login_data: UserLoginSchema, db: db_dependency):
     user: Optional[Users] = await db.scalar(select(Users).where(Users.email == login_data.email))
 
     if not user:
+        logger.info(f'User {login_data.email} was not authorized: Incorrect login or password')
         return False
 
     if not verify_password(login_data.password, user.hashed_password):
+        logger.info(f'User {login_data.email} was not authorized: Incorrect login or password')
         return False
 
+    logger.info(f'User {login_data.email} has been successfully authorized')
     return user
 
 async def get_current_user(token: str = Depends(oauth2_bearer)):

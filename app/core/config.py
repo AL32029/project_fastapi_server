@@ -85,6 +85,12 @@ class AppSettings(BaseSettings):
                 "handlers": [
                     "queue_handler",
                 ],
+            },
+            "users": {
+                "level": "INFO",
+                "handlers": [
+                    "file"
+                ]
             }
         }
     }
